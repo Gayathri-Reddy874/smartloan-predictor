@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Check your loan eligibility · SmartLoan{% endblock %}
+
+{% macro opt(name, value, label) -%}
+  <option value="{{ value }}" {% if values.get(name) == value %}selected{% endif %}>{{ label }}</option>
+{%- endmacro %}
+{% macro err(name) -%}
+  {% if errors.get(name) %}<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="intro">
+  <h1>Check your loan eligibility</h1>
+  <p>Answer eight questions. You get a score out of 100, the reasons behind it, and what would change the result.</p>
+</div>
+
+{% if errors %}
+<div class="error-summary" role="alert">
+  <strong>Check the highlighted fields.</strong> {{ errors|length }} {{ 'field needs' if errors|length == 1 else 'fields need' }} attention.
+</div>
+{% endif %}
+
+<div class="layout">
+  <form action="{{ url_for('predict') }}" method="post" id="loan-form" data-rate="{{ rate }}" novalidate>
+
+    <fieldset>
+      <legend>Household</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="dependents">Dependents</label>
+          <select id="dependents" name="dependents" required {% if errors.dependents %}aria-invalid="true" aria-describedby="dependents-error"{% endif %}>
+            <option value="">Select</option>
+            {{ opt('dependents', '0', 'None') }}{{ opt('dependents', '1', '1') }}{{ opt('dependents', '2', '2') }}{{ opt('dependents', '3', '3 or more') }}
+          </select>
+          <p class="hint">People who depend on your income.</p>
+          {{ err('dependents') }}
+        </div>
+        <div class="field">
+          <label for="education">Education</label>
+          <select id="education" name="education" required {% if errors.education %}aria-invalid="true" aria-describedby="education-error"{% endif %}>
+            <option value="">Select</option>
+            {{ opt('education', '1', 'Graduate') }}{{ opt('education', '0', 'Not a graduate') }}
+          </select>
+          {{ err('education') }}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Income</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="employment">Employment type</label>
+          <select id="employment" name="employment" required {% if errors.employment %}aria-invalid="true" aria-describedby="employment-error"{% endif %}>
+            <option value="">Select</option>
+            {{ opt('employment', '0', 'Salaried') }}{{ opt('employment', '1', 'Self-employed') }}
+          </select>
+          {{ err('employment') }}
+        </div>
+        <div class="field">
+          <label for="income">Your monthly income</label>
+          <div class="affix"><span aria-hidden="true">₹</span>
+            <input id="income" name="income" type="number" inputmode="numeric" min="0" step="1" placeholder="60000" value="{{ values.get('income', '') }}" required {% if errors.income %}aria-invalid="true" aria-describedby="income-error"{% endif %}>
+          </div>
+          <p class="hint">Before tax.</p>
+          {{ err('income') }}
+        </div>
+        <div class="field">
+          <label for="co_app_income">Co-applicant monthly income</label>
+          <div class="affix"><span aria-hidden="true">₹</span>
+            <input id="co_app_income" name="co_app_income" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="{{ values.get('co_app_income', '') }}" required {% if errors.co_app_income %}aria-invalid="true" aria-describedby="co_app_income-error"{% endif %}>
+          </div>
+          <p class="hint">Enter 0 if you are applying alone.</p>
+          {{ err('co_app_income') }}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Loan</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="loan_amount">Loan amount</label>
+          <div class="affix"><span aria-hidden="true">₹</span>
+            <input id="loan_amount" name="loan_amount" type="number" inputmode="numeric" min="10000" step="1000" placeholder="2000000" value="{{ values.get('loan_amount', '') }}" required {% if errors.loan_amount %}aria-invalid="true" aria-describedby="loan_amount-error"{% endif %}>
+          </div>
+          {{ err('loan_amount') }}
+        </div>
+        <div class="field">
+          <label for="loan_amount_term">Repayment term</label>
+          <div class="affix affix-end">
+            <input id="loan_amount_term" name="loan_amount_term" type="number" inputmode="numeric" min="6" max="480" step="1" placeholder="240" value="{{ values.get('loan_amount_term', '') }}" required {% if errors.loan_amount_term %}aria-invalid="true" aria-describedby="loan_amount_term-error"{% endif %}>
+            <span aria-hidden="true">months</span>
+          </div>
+          <p class="hint">240 months is 20 years.</p>
+          {{ err('loan_amount_term') }}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Credit</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="history">Credit history</label>
+          <select id="history" name="history" required {% if errors.history %}aria-invalid="true" aria-describedby="history-error"{% endif %}>
+            <option value="">Select</option>
+            {{ opt('history', '1', 'Good: past loans or cards repaid on time') }}{{ opt('history', '0', 'None, or missed repayments') }}
+          </select>
+          {{ err('history') }}
+        </div>
+      </div>
+    </fieldset>
+
+    <button type="submit" class="btn">Check eligibility</button>
+  </form>
+
+  <aside class="panel" aria-labelledby="panel-title">
+    <h2 id="panel-title">Estimated monthly repayment</h2>
+    <div id="live" aria-live="polite">
+      <p class="emi" id="emi-value">–</p>
+      <p class="emi-sub" id="emi-sub">Fill in income, loan amount and term to see your EMI.</p>
+
+      <div class="meter" id="meter" hidden>
+        <div class="track"><div class="marker" id="marker"></div></div>
+        <div class="ticks"><span>30%</span><span>40%</span><span>50%</span></div>
+      </div>
+      <p class="meter-label" id="meter-label" hidden></p>
+    </div>
+    <p class="assumption">Calculated at {{ '%g' % rate }}% a year on a reducing balance. Lenders usually prefer an EMI under 40% of income.</p>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>{% endblock %}

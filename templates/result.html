@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Your result · SmartLoan{% endblock %}
+
+{% set copy = {
+  'approved': ('Likely to be approved', 'This application meets the scorecard thresholds. A lender will still verify income and documents.'),
+  'review':   ('Needs manual review', 'Some factors fall short of the approval threshold, so a loan officer would look at this application by hand.'),
+  'declined': ('Unlikely to be approved', 'The score is below the minimum. The suggestions below show what would change the result.')
+} %}
+
+{% block content %}
+<section class="result result-{{ a.decision }}" aria-labelledby="verdict">
+  <h1 id="verdict">{{ copy[a.decision][0] }}</h1>
+  <p class="lead">{{ copy[a.decision][1] }}</p>
+
+  <div class="score">
+    <p class="score-num"><span>{{ a.score }}</span> out of 100</p>
+    <svg class="score-bar" viewBox="0 0 100 6" preserveAspectRatio="none" role="img" aria-label="Score {{ a.score }} out of 100. Review from 50, approval from 70.">
+      <rect class="bar-track" x="0" y="1" width="100" height="4" rx="2"/>
+      <rect class="bar-fill" x="0" y="1" width="{{ a.score }}" height="4" rx="2"/>
+      <line class="bar-tick" x1="50" x2="50" y1="0" y2="6"/>
+      <line class="bar-tick" x1="70" x2="70" y1="0" y2="6"/>
+    </svg>
+    <div class="score-scale"><span>Declined</span><span>Review from 50</span><span>Approved from 70</span></div>
+  </div>
+
+  {% if a.notes %}
+  <ul class="notes">{% for n in a.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+  {% endif %}
+</section>
+
+<div class="result-grid">
+  <section aria-labelledby="why">
+    <h2 id="why">How the score was built</h2>
+    <table class="factors">
+      <thead><tr><th scope="col">Factor</th><th scope="col">Your answer</th><th scope="col" class="num">Points</th></tr></thead>
+      <tbody>
+      {% for f in a.factors %}
+        <tr>
+          <th scope="row">{{ f.name }}</th>
+          <td>{{ f.detail }} <span class="tag tag-{{ f.status }}">{{ f.status }}</span></td>
+          <td class="num">{{ f.points }} / {{ f.max_points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot><tr><th scope="row" colspan="2">Total</th><td class="num">{{ a.score }} / 100</td></tr></tfoot>
+    </table>
+    <p class="fine">Gender, marital status and property location are not used in this decision.</p>
+  </section>
+
+  <section aria-labelledby="figures">
+    <h2 id="figures">Your figures</h2>
+    <dl class="figures">
+      <div><dt>Loan amount</dt><dd>{{ applicant.loan_amount|inr }}</dd></div>
+      <div><dt>Term</dt><dd>{{ applicant.term_months }} months</dd></div>
+      <div><dt>Monthly EMI</dt><dd>{{ a.emi|inr }}</dd></div>
+      <div><dt>Household income</dt><dd>{{ applicant.total_income|inr }} a month</dd></div>
+      <div><dt>EMI share of income</dt><dd>{{ '%.0f' % (a.foir * 100) }}%</dd></div>
+      {% if probability is not none %}
+      <div><dt>Statistical model</dt><dd>{{ '%.0f' % (probability * 100) }}% approval likelihood</dd></div>
+      {% endif %}
+    </dl>
+    {% if probability is not none %}<p class="fine">The statistical model is a second opinion. It doesn't change the decision above.</p>{% endif %}
+  </section>
+</div>
+
+{% if a.tips %}
+<section class="tips" aria-labelledby="tips-title">
+  <h2 id="tips-title">What would improve this result</h2>
+  <ul>{% for t in a.tips %}<li>{{ t }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<div class="actions">
+  <a class="btn" href="{{ url_for('index') }}">Check another application</a>
+  <button type="button" class="btn btn-quiet" id="print-btn">Print this result</button>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>{% endblock %}

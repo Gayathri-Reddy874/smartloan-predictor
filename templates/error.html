@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · SmartLoan{% endblock %}
+{% block content %}
+<div class="intro">
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <p><a class="btn" href="{{ url_for('index') }}">Back to the form</a></p>
+</div>
+{% endblock %}
