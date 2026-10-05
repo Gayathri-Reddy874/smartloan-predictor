@@ -8,6 +8,8 @@
 
 A Flask web application that estimates how likely a loan application is to be approved and explains why. Each application is scored on a transparent 100-point scorecard. The result shows the points behind every factor and what would improve the outcome.
 
+---
+
 ## Screenshots
 
 | Application form | Live repayment preview | Result |
