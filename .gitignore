@@ -1,1 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.idea/
+.vscode/
+
+# data and trained artefacts are reproducible with train_model.py
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+
 
