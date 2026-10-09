@@ -160,6 +160,7 @@ The 30 tests cover EMI maths, scorecard rules and caps, form validation, securit
 ## Author
 
 **Mallareddygari Gayathri**
+
 B.E. in AI/ML Engineering, Bengaluru, India
 
 Data Science intern and aspiring Data Analyst, moving toward Data Scientist and AI/ML Engineer roles.
